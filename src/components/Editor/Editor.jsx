@@ -82,62 +82,70 @@ const Editor = () => {
           </div>
         </div>
       </main>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
-        <div className="max-w-[900px] mx-auto px-6 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Toolbar editor={editor} />
-              <div className="h-6 w-px bg-gray-200" />
-              <div className="relative group">
-                <button
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-md sm:w-40 md:w-60"
-                >
-                  <span className="truncate">{selectedModel || 'Select Model'}</span>
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 
-                  rounded-md shadow-sm bg-white border border-gray-200
-                  opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100
-                  transition-all duration-100 z-50">
-                  <div className="border-t">
-                    {models.map((modelName) => (
+            <div className="fixed bottom-0 left-0 right-0 bg-white">
+              <div className="max-w-[900px] mx-auto px-6 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Toolbar editor={editor} />
+                    <div className="h-6 w-px bg-gray-200" />
+                    <div className="relative group">
                       <button
-                        key={modelName}
-                        onClick={() => setSelectedModel(modelName)}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                          selectedModel === modelName ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
-                        }`}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-md sm:w-40 md:w-60"
                       >
-                        {modelName}
+                        <span className="truncate">{selectedModel || 'Select Model'}</span>
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </button>
-                    ))}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-0 w-64 
+                                  rounded-md shadow-sm bg-white border border-gray-200
+                                  opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100
+                                  transition-all duration-100 z-50">
+                                  <div className="max-h-[400px] overflow-y-auto">
+                                    {models.map((modelName) => (
+                            <button
+                              key={modelName}
+                              onClick={() => setSelectedModel(modelName)}
+                              className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                                selectedModel === modelName ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                              }`}
+                            >
+                              {modelName}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleAnalyze}
+                      disabled={isAnalyzing || !selectedModel}
+                      className="relative inline-flex items-center justify-center gap-2 px-4 py-2 
+                        min-w-[150px]
+                        bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 
+                        text-white rounded-md font-medium 
+                        shadow-[0_0_20px_rgba(79,70,229,0.3)] 
+                        hover:shadow-[0_0_25px_rgba(79,70,229,0.45)] 
+                        hover:scale-[1.02] 
+                        active:scale-[0.98]
+                        disabled:opacity-50 disabled:cursor-not-allowed 
+                        transition-all duration-300 ease-out"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Analyzing...</span>
+                        </>
+                      ) : (
+                        <span>Analyze</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {wordCount} words
                   </div>
                 </div>
               </div>
-              <button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !selectedModel}
-                className="relative inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md font-medium shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 group"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Analyzing...</span>
-                  </>
-                ) : (
-                  <span>Analyze</span>
-                )}
-              </button>
             </div>
-            <div className="text-sm text-gray-500">
-              {wordCount} words
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
