@@ -12,7 +12,11 @@ const Editor = () => {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        paste: {
+          preserveFormat: true,
+        },
+      }),
       Underline,
       Placeholder.configure({
         placeholder: 'Type or paste (⌘+V) your text here or upload a document.',
