@@ -94,7 +94,7 @@ const Editor = () => {
                       >
                         <span className="truncate">{selectedModel || 'Select Model'}</span>
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
                       </button>
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-0 w-64 
