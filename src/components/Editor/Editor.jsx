@@ -1,37 +1,29 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import TextAlign from '@tiptap/extension-text-align'
-import Highlight from '@tiptap/extension-highlight'
 import CharacterCount from '@tiptap/extension-character-count'
+import Underline from '@tiptap/extension-underline'
 import React, { useState } from 'react'
 import Toolbar from './Toolbar'
 
 const Editor = () => {
+  const [title, setTitle] = useState('')
   const [wordCount, setWordCount] = useState(0)
 
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Underline,
       Placeholder.configure({
-        placeholder: 'Start writing your document...',
+        placeholder: 'Type or paste (⌘+V) your text here or upload a document.',
+        emptyEditorClass: 'is-editor-empty',
       }),
-      TaskList,
-      TaskItem,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Highlight,
-      CharacterCount.configure({
-        limit: 10000,
-      }),
+      CharacterCount,
     ],
-    content: '<p></p>',
+    content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[70vh] px-8 py-4 leading-relaxed',
+        class: 'prose prose-lg max-w-none px-8 py-6 min-h-[calc(100vh-140px)] focus:outline-none',
       },
     },
     onUpdate: ({ editor }) => {
@@ -41,15 +33,32 @@ const Editor = () => {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-          <Toolbar editor={editor} />
-          <div className="relative">
+    <div className="min-h-screen bg-white relative">
+      <header className="fixed top-0 left-0 right-0 bg-white z-10">
+        <div className="max-w-[900px] mx-auto px-6 py-4">
+          <input
+            type="text"
+            value={title}
+            placeholder='Untitled document'
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-2xl font-bold text-gray-900 w-full focus:outline-none border-none bg-transparent"
+          />
+        </div>
+      </header>
+
+      <main className="max-w-[900px] mx-auto pt-16">
+        <div className="py-4">
+          <div className="mt-4 pb-20"> {/* Added pb-20 for bottom spacing */}
             <EditorContent editor={editor} />
-            <div className="absolute bottom-4 right-4 text-sm text-gray-500 dark:text-gray-400">
-              {wordCount} words
-            </div>
+          </div>
+        </div>
+      </main>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white">
+        <div className="max-w-[900px] mx-auto px-6 py-2 flex justify-between items-center">
+          <Toolbar editor={editor} />
+          <div className="text-sm text-gray-500">
+            {wordCount} words
           </div>
         </div>
       </div>
