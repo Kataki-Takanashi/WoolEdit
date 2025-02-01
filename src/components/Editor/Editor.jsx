@@ -6,69 +6,17 @@ import Underline from '@tiptap/extension-underline'
 import Highlight from '@tiptap/extension-highlight'
 import { Color } from '@tiptap/extension-color'
 import TextStyle from '@tiptap/extension-text-style'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Toolbar from './Toolbar'
 import { getModels, analyzeText } from '../../services/ollamaService'
-import DiffMatchPatch from 'diff-match-patch'
-import { Mark, Extension } from '@tiptap/core'
-
-// Add this custom extension
-const CustomHighlight = Extension.create({
-  name: 'customHighlight',
-  addGlobalAttributes() {
-    return [
-      {
-        types: ['textStyle'],
-        attributes: {
-          class: {
-            default: null,
-            parseHTML: element => element.getAttribute('class'),
-            renderHTML: attributes => {
-              if (!attributes.class) return {}
-              return { class: attributes.class }
-            }
-          }
-        }
-      }
-    ]
-  }
-})
+import { analyzeTextDifferences, CustomHighlight, DiffHighlight } from '../../utils/textAnalysis'
 
 const Editor = () => {
-  // Remove showDiff state since we'll update editor directly
   const [title, setTitle] = useState('')
   const [wordCount, setWordCount] = useState(0)
   const [models, setModels] = useState([])
   const [selectedModel, setSelectedModel] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  
-  const DiffHighlight = Mark.create({
-    name: 'diffHighlight',
-    addAttributes() {
-      return {
-        type: {
-          default: null,
-          parseHTML: element => element.getAttribute('data-diff-type'),
-          renderHTML: attributes => ({
-            'data-diff-type': attributes.type,
-            style: attributes.type === 'deletion' 
-              ? 'background-color: #fee2e2; text-decoration: line-through; color: #b91c1c;'
-              : 'background-color: #dcfce7; color: #15803d;'
-          })
-        }
-      }
-    },
-    parseHTML() {
-      return [
-        {
-          tag: 'span[data-diff-type]'
-        }
-      ]
-    },
-    renderHTML({ HTMLAttributes }) {
-      return ['span', HTMLAttributes, 0]
-    }
-  })
   
   const editor = useEditor({
     extensions: [
@@ -86,21 +34,216 @@ const Editor = () => {
       Color,
       TextStyle,
       Highlight.configure({ multicolor: true }),
+      DiffHighlight.configure({
+        HTMLAttributes: {
+          onclick: (e) => {
+            const correction = e.target.getAttribute('data-correction')
+            const type = e.target.getAttribute('data-diff-type')
+            
+            if (type === 'deletion' && !correction) return
+            
+            const { from, to } = editor.state.selection
+            editor.commands.setTextSelection({ from, to })
+            
+            if (type === 'deletion') {
+              editor.commands.delete()
+            } else {
+              editor.commands.insertContent(correction)
+            }
+          }
+        }
+      })
     ],
     content: '',
     editorProps: {
       attributes: {
         class: 'prose prose-lg max-w-none px-8 py-6 min-h-[calc(100vh-140px)] focus:outline-none',
       },
+      handleDOMEvents: {
+        click: (view, event) => {
+          const target = event.target
+          if (target.classList.contains('diff-highlight')) {
+            const correction = target.getAttribute('data-correction')
+            const type = target.getAttribute('data-diff-type')
+            const pos = view.posAtDOM(target)
+            const textLength = target.textContent.length
+            
+            if (event.shiftKey) {
+              event.preventDefault() // Prevent text selection
+              // Reject change (delete the mark without applying correction)
+              editor.chain()
+                .focus()
+                .setTextSelection({ from: pos, to: pos + textLength })
+                .unsetMark('diffHighlight')
+                .run()
+              return true
+            }
+            
+            if (type === 'deletion') {
+              editor.chain()
+                .focus()
+                .setTextSelection({ from: pos, to: pos + textLength })
+                .unsetMark('diffHighlight')
+                .deleteSelection()
+                .run()
+            } else if (correction) {
+              editor.chain()
+                .focus()
+                .setTextSelection({ from: pos, to: pos + textLength })
+                .unsetMark('diffHighlight')
+                .insertContent(correction)
+                .run()
+            }
+            return true
+          }
+          return false
+        }
+      }
     },
     onUpdate: ({ editor }) => {
       const words = editor.storage.characterCount.words()
       setWordCount(words)
     },
+    autofocus: true,
   })
 
+  useEffect(() => {
+    // Add keyboard shortcut listener
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault() // Prevent the newline
+        e.stopPropagation()
+        handleAnalyze()
+      }
+
+      // Cmd/Ctrl + Alt + A to accept all changes
+      if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault()
+        const marks = editor.state.doc.marks.filter(mark => mark.type.name === 'diffHighlight')
+        marks.forEach(mark => {
+          if (mark.attrs.type === 'deletion') {
+            editor.commands.deleteSelection()
+          } else if (mark.attrs.correction) {
+            editor.commands.insertContent(mark.attrs.correction)
+          }
+          editor.commands.unsetMark('diffHighlight')
+        })
+        return
+      }
+
+      // Cmd/Ctrl + Alt + R to reject all changes
+      if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault()
+        editor.commands.unsetMark('diffHighlight')
+        return
+      }
+
+      // Alt + Right Arrow to accept next change
+      if (e.altKey && e.key === 'ArrowRight') {
+        e.preventDefault()
+        const nextMark = editor.state.doc.marks.find(mark => 
+          mark.type.name === 'diffHighlight' && 
+          mark.pos > editor.state.selection.from
+        )
+        if (nextMark) {
+          if (nextMark.attrs.type === 'deletion') {
+            editor.commands.deleteSelection()
+          } else if (nextMark.attrs.correction) {
+            editor.commands.insertContent(nextMark.attrs.correction)
+          }
+          editor.commands.unsetMark('diffHighlight')
+        }
+        return
+      }
+
+      // Alt + Left Arrow to reject next change
+      if (e.altKey && e.key === 'ArrowLeft') {
+        e.preventDefault()
+        const nextMark = editor.state.doc.marks.find(mark => 
+          mark.type.name === 'diffHighlight' && 
+          mark.pos > editor.state.selection.from
+        )
+        if (nextMark) {
+          editor.commands.unsetMark('diffHighlight')
+        }
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+            e.preventDefault()
+            e.stopPropagation()
+            editor.state.doc.descendants((node, pos) => {
+              if (node.marks.find(mark => mark.type.name === 'diffHighlight')) {
+                const mark = node.marks.find(m => m.type.name === 'diffHighlight')
+                if (mark.attrs.type === 'deletion') {
+                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize }).deleteSelection().run()
+                } else if (mark.attrs.correction) {
+                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize })
+                    .insertContent(mark.attrs.correction).run()
+                }
+              }
+            })
+            editor.commands.unsetMark('diffHighlight')
+            return
+          }
+      // Accept next change (Cmd/Ctrl + ])
+      if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        let found = false
+        editor.state.doc.descendants((node, pos) => {
+          if (!found && node.marks.find(mark => mark.type.name === 'diffHighlight')) {
+            found = true
+            const mark = node.marks.find(m => m.type.name === 'diffHighlight')
+            
+            if (mark.attrs.type === 'deletion') {
+              editor.chain()
+                .focus()
+                .setTextSelection({ from: pos, to: pos + node.nodeSize })
+                .deleteSelection()
+                .unsetMark('diffHighlight')
+                .run()
+            } else if (mark.attrs.correction) {
+              editor.chain()
+                .focus()
+                .setTextSelection({ from: pos, to: pos + node.nodeSize })
+                .replaceWith({ type: 'text', text: mark.attrs.correction })
+                .unsetMark('diffHighlight')
+                .run()
+            }
+            return false
+          }
+        })
+        return
+      }
+
+      // Reject next change (Cmd/Ctrl + [)
+      if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        let found = false
+        editor.state.doc.descendants((node, pos) => {
+          if (!found && node.marks.find(mark => mark.type.name === 'diffHighlight')) {
+            found = true
+            editor.chain()
+              .focus()
+              .setTextSelection({ from: pos, to: pos + node.nodeSize })
+              .unsetMark('diffHighlight')
+              .run()
+            return false
+          }
+        })
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [selectedModel]) // Add selectedModel as dependency since handleAnalyze uses it
+
   const handleAnalyze = async () => {
-    if (!editor || !selectedModel) return
+    if (!editor || !selectedModel || isAnalyzing) return
     
     setIsAnalyzing(true)
     try {
@@ -108,28 +251,8 @@ const Editor = () => {
       const correctedText = await analyzeText(content, selectedModel)
       
       if (correctedText) {
-        const dmp = new DiffMatchPatch()
-        const diffs = dmp.diff_main(content, correctedText)
-        dmp.Diff_EditCost = 4
-        dmp.diff_cleanupEfficiency(diffs)
-        
-        // Clear the content first
-        editor.commands.clearContent()
-        
-        // Build the HTML content
-        let html = ''
-        diffs.forEach(([operation, text]) => {
-          if (operation === -1) {
-            html += `<span style="background-color: #fee2e2; text-decoration: line-through; color: #b91c1c;">${text}</span>`
-          } else if (operation === 1) {
-            html += `<span style="background-color: #dcfce7; color: #15803d;">${text}</span>`
-          } else {
-            html += text
-          }
-        })
-        
-        // Set the new content
-        editor.commands.setContent(html, false)
+        const nodes = analyzeTextDifferences(content, correctedText)
+        editor.commands.setContent(nodes)
       }
     } catch (error) {
       console.error('Error during analysis:', error)

@@ -9,3 +9,37 @@
   height: 0;
   pointer-events: none;
 }
+
+.diff-highlight {
+  position: relative;
+}
+
+.diff-highlight[data-diff-type="change"]:hover::after {
+  content: attr(data-correction);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  min-width: max-content;
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 50;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  opacity: 1;
+  transition: all 100ms;
+}
+
+.diff-highlight:not(:hover)::after {
+  opacity: 0;
+  transform: translateX(-50%) scale(0);
+}
+
+.deletion-highlight[data-correction=""] {
+  cursor: pointer;
+}
