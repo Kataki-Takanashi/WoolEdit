@@ -57,7 +57,7 @@ const Editor = () => {
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-lg max-w-none px-8 py-6 min-h-[calc(100vh-140px)] focus:outline-none',
+        class: 'prose prose-lg max-w-none px-6 py-6 min-h-[calc(100vh-140px)] focus:outline-none',
       },
       handleDOMEvents: {
         click: (view, event) => {
@@ -252,7 +252,7 @@ const Editor = () => {
   return (
     <div className="min-h-screen bg-white relative">
       <header className="fixed top-0 left-0 right-0 bg-white z-10">
-        <div className="max-w-[900px] mx-auto px-6 py-4">
+        <div className="max-w-4xl mx-auto px-6 py-4">
           <input
             type="text"
             value={title}
@@ -263,7 +263,7 @@ const Editor = () => {
         </div>
       </header>
 
-      <main className="max-w-[900px] mx-auto pt-16">
+      <main className="max-w-4xl mx-auto pt-16">
         <div className="py-4">
           <div className="mt-4 pb-20">
             <EditorContent editor={editor} />
@@ -272,7 +272,7 @@ const Editor = () => {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white">
-        <div className="max-w-[900px] mx-auto px-6 py-2">
+        <div className="max-w-4xl mx-auto px-6 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Toolbar editor={editor} />
