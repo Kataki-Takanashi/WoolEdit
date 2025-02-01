@@ -70,12 +70,22 @@ const Editor = () => {
             
             if (event.shiftKey) {
               event.preventDefault() // Prevent text selection
-              // Reject change (delete the mark without applying correction)
-              editor.chain()
-                .focus()
-                .setTextSelection({ from: pos, to: pos + textLength })
-                .unsetMark('diffHighlight')
-                .run()
+              if (type === 'addition') {
+                // For green highlights, delete the text
+                editor.chain()
+                  .focus()
+                  .setTextSelection({ from: pos, to: pos + textLength })
+                  .unsetMark('diffHighlight')
+                  .deleteSelection()
+                  .run()
+              } else {
+                // For red and blue highlights, just remove the highlight
+                editor.chain()
+                  .focus()
+                  .setTextSelection({ from: pos, to: pos + textLength })
+                  .unsetMark('diffHighlight')
+                  .run()
+              }
               return true
             }
             
@@ -185,57 +195,24 @@ const Editor = () => {
             editor.commands.unsetMark('diffHighlight')
             return
           }
-      // Accept next change (Cmd/Ctrl + ])
       if ((e.metaKey || e.ctrlKey) && e.key === ']') {
-        e.preventDefault()
-        e.stopPropagation()
-        
-        let found = false
-        editor.state.doc.descendants((node, pos) => {
-          if (!found && node.marks.find(mark => mark.type.name === 'diffHighlight')) {
-            found = true
-            const mark = node.marks.find(m => m.type.name === 'diffHighlight')
-            
-            if (mark.attrs.type === 'deletion') {
-              editor.chain()
-                .focus()
-                .setTextSelection({ from: pos, to: pos + node.nodeSize })
-                .deleteSelection()
-                .unsetMark('diffHighlight')
-                .run()
-            } else if (mark.attrs.correction) {
-              editor.chain()
-                .focus()
-                .setTextSelection({ from: pos, to: pos + node.nodeSize })
-                .replaceWith({ type: 'text', text: mark.attrs.correction })
-                .unsetMark('diffHighlight')
-                .run()
-            }
-            return false
+            e.preventDefault()
+            e.stopPropagation()
+            editor.state.doc.descendants((node, pos) => {
+              if (pos > editor.state.selection.from && 
+                  node.marks.find(mark => mark.type.name === 'diffHighlight')) {
+                const mark = node.marks.find(m => m.type.name === 'diffHighlight')
+                if (mark.attrs.type === 'deletion') {
+                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize }).deleteSelection().run()
+                } else if (mark.attrs.correction) {
+                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize })
+                    .insertContent(mark.attrs.correction).run()
+                }
+                return false // Stop after handling first mark
+              }
+            })
+            return
           }
-        })
-        return
-      }
-
-      // Reject next change (Cmd/Ctrl + [)
-      if ((e.metaKey || e.ctrlKey) && e.key === '[') {
-        e.preventDefault()
-        e.stopPropagation()
-        
-        let found = false
-        editor.state.doc.descendants((node, pos) => {
-          if (!found && node.marks.find(mark => mark.type.name === 'diffHighlight')) {
-            found = true
-            editor.chain()
-              .focus()
-              .setTextSelection({ from: pos, to: pos + node.nodeSize })
-              .unsetMark('diffHighlight')
-              .run()
-            return false
-          }
-        })
-        return
-      }
     }
 
     document.addEventListener('keydown', handleKeyDown)

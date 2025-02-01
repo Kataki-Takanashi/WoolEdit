@@ -33,6 +33,22 @@ export const DiffHighlight = Mark.create({
           const correction = node.getAttribute('data-correction')
           const type = node.getAttribute('data-diff-type')
           
+          if (event.shiftKey) {
+            // For red (deletion) and blue (change) highlights, just remove the highlight
+            if (type === 'deletion' || type === 'change') {
+              view.dispatch(view.state.tr.removeMark(
+                pos,
+                pos + node.textContent.length,
+                view.state.schema.marks.diffHighlight
+              ))
+            } else if (type === 'addition') {
+              // For green (addition) highlights, remove the text
+              view.dispatch(view.state.tr.delete(pos, pos + node.textContent.length))
+            }
+            return
+          }
+          
+          // Normal click behavior remains the same
           if (type === 'deletion') {
             view.dispatch(view.state.tr.delete(pos, pos + node.textContent.length))
           } else if (correction) {
@@ -200,11 +216,23 @@ const isRelatedWord = (word1, word2) => {
 }
 
 const shareCommonParts = (word1, word2) => {
+  // Don't consider words as similar if length difference is too great
+  if (Math.abs(word1.length - word2.length) > 3) return false
+  
   const minLength = Math.min(word1.length, word2.length)
+  // Only consider significant common parts (more than 3 characters)
   const commonStart = word1.slice(0, minLength)
   const commonEnd = word1.slice(-minLength)
   
-  return word2.includes(commonStart) || word2.includes(commonEnd)
+  // Check if the common part is substantial enough (more than 60% of the longer word)
+  const longerWordLength = Math.max(word1.length, word2.length)
+  const commonPartThreshold = Math.floor(longerWordLength * 0.6)
+  
+  const hasSignificantCommonPart = 
+    (word2.includes(commonStart) && commonStart.length > commonPartThreshold) ||
+    (word2.includes(commonEnd) && commonEnd.length > commonPartThreshold)
+  
+  return hasSignificantCommonPart
 }
 
 export const isMinorChange = (word1, word2) => {
