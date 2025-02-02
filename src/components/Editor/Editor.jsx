@@ -66,7 +66,12 @@ const Editor = () => {
             const correction = target.getAttribute('data-correction')
             const type = target.getAttribute('data-diff-type')
             const pos = view.posAtDOM(target)
-            const textLength = target.textContent.length
+            const textLength = target.textContent.trim().length; // Ensure we check the trimmed length
+            
+            // Apply single-letter-edit class if it's a single character change
+            if (textLength === 1 && type === 'change') {
+              target.classList.add('single-letter-edit');
+            }
             
             if (event.shiftKey) {
               event.preventDefault() // Prevent text selection
@@ -314,7 +319,7 @@ const Editor = () => {
                   bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 
                   text-white rounded-md font-medium 
                   shadow-[0_0_20px_rgba(79,70,229,0.3)] 
-                  hover:shadow-[0_0_25px_rgba(79,70,229,0.45)] 
+                  hover:shadow-[0_0_25px_rgba(79,70,229,1)] 
                   hover:scale-[1.02] 
                   active:scale-[0.98]
                   disabled:opacity-50 disabled:cursor-not-allowed 

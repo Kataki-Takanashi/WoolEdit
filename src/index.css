@@ -43,3 +43,77 @@
 .deletion-highlight[data-correction=""] {
   cursor: pointer;
 }
+
+.change-highlight {
+  position: relative;
+}
+
+.change-highlight:hover::after {
+  content: attr(data-correction);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 5px);
+  background-color: white;
+  color: #1f2937;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  z-index: 50;
+  animation: tooltip-slide-up 0.2s ease-out;
+}
+
+.change-highlight:hover::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% - 2px);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #3b82f6;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+  z-index: 51;
+  animation: tooltip-slide-up 0.2s ease-out;
+}
+
+@keyframes tooltip-slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Single letter edit styles */
+.diff-highlight[data-diff-type="change"].single-letter-edit {
+  position: relative;
+  padding: 2px 4px;
+  margin: 0 2px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.diff-highlight.single-letter-edit::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  bottom: -4px;
+  left: -4px;
+  background-color: rgba(59, 130, 246, 0.05);
+  border-radius: 4px;
+  z-index: -1;
+  transition: background-color 0.2s ease;
+}
+
+.diff-highlight.single-letter-edit:hover::before {
+  background-color: rgba(59, 130, 246, 0.12);
+}
