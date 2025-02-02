@@ -17,6 +17,7 @@ const Editor = () => {
   const [models, setModels] = useState([])
   const [selectedModel, setSelectedModel] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [currentHighlightIndex, setCurrentHighlightIndex] = useState(-1)
   
   const editor = useEditor({
     extensions: [
@@ -123,124 +124,164 @@ const Editor = () => {
   })
 
   useEffect(() => {
-    // Add keyboard shortcut listener
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault() // Prevent the newline
-        e.stopPropagation()
-        handleAnalyze()
-      }
+const handleKeyDown = (e) => {
+  // Cmd/Ctrl + Enter to analyze
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault()
+    e.stopPropagation()
+    handleAnalyze()
+  }
 
-      // Cmd/Ctrl + Alt + A to accept all changes
-      if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault()
-        const marks = editor.state.doc.marks.filter(mark => mark.type.name === 'diffHighlight')
-        marks.forEach(mark => {
-          if (mark.attrs.type === 'deletion') {
-            editor.commands.deleteSelection()
-          } else if (mark.attrs.correction) {
-            editor.commands.insertContent(mark.attrs.correction)
-          }
-          editor.commands.unsetMark('diffHighlight')
-        })
-        return
+  // Cmd/Ctrl + Alt + A to accept all changes
+  if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'a') {
+    e.preventDefault()
+    const marks = editor.state.doc.marks.filter(mark => mark.type.name === 'diffHighlight')
+    marks.forEach(mark => {
+      if (mark.attrs.type === 'deletion') {
+        editor.commands.deleteSelection()
+      } else if (mark.attrs.correction) {
+        editor.commands.insertContent(mark.attrs.correction)
       }
+      editor.commands.unsetMark('diffHighlight')
+    })
+    return
+  }
 
-      // Cmd/Ctrl + Alt + R to reject all changes
-      if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'r') {
-        e.preventDefault()
-        editor.commands.unsetMark('diffHighlight')
-        return
-      }
+  // Cmd/Ctrl + Alt + R to reject all changes
+  if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'r') {
+    e.preventDefault()
+    editor.commands.unsetMark('diffHighlight')
+    return
+  }
 
-      // Alt + Right Arrow to accept next change
-      if (e.altKey && e.key === 'ArrowRight') {
-        e.preventDefault()
-        const nextMark = editor.state.doc.marks.find(mark => 
-          mark.type.name === 'diffHighlight' && 
-          mark.pos > editor.state.selection.from
-        )
-        if (nextMark) {
-          if (nextMark.attrs.type === 'deletion') {
-            editor.commands.deleteSelection()
-          } else if (nextMark.attrs.correction) {
-            editor.commands.insertContent(nextMark.attrs.correction)
-          }
-          editor.commands.unsetMark('diffHighlight')
-        }
-        return
-      }
-
-      // Alt + Left Arrow to reject next change
-      if (e.altKey && e.key === 'ArrowLeft') {
-        e.preventDefault()
-        const nextMark = editor.state.doc.marks.find(mark => 
-          mark.type.name === 'diffHighlight' && 
-          mark.pos > editor.state.selection.from
-        )
-        if (nextMark) {
-          editor.commands.unsetMark('diffHighlight')
-        }
-        return
-      }
-      // CMD/CTRL + SHIFT + A to apply all edits
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault()
-        e.stopPropagation()
-        
-        // Get all diff-highlight elements and convert to array
-        const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
-        
-        // First, remove all diff highlights
-        editor.commands.unsetMark('diffHighlight')
-        
-        // Then process each highlight from last to first
-        for (let i = highlights.length - 1; i >= 0; i--) {
-          const element = highlights[i]
-          const correction = element.getAttribute('data-correction')
-          const type = element.getAttribute('data-diff-type')
-          const pos = editor.view.posAtDOM(element, 0)
-          const textLength = element.textContent.length
-          
+  // Alt + Right Arrow to accept next change
+  if (e.altKey && e.key === 'ArrowRight') {
+    e.preventDefault()
+    console.log('Alt + Right pressed, currentIndex:', currentHighlightIndex)
+    
+    // Get fresh list of highlights each time
+    const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
+    console.log('Found highlights:', highlights.length)
+    
+    // Always process the first highlight since the list changes after each operation
+    if (highlights.length > 0) {
+      const element = highlights[0]
+      const correction = element.getAttribute('data-correction')
+      const type = element.getAttribute('data-diff-type')
+      const pos = editor.view.posAtDOM(element, 0)
+      const textLength = element.textContent.length
+      
+      console.log('Processing highlight:', { correction, type, pos, textLength })
+      
+      // Create a single transaction for all operations
+      editor.chain()
+        .focus()
+        .setTextSelection({ from: pos, to: pos + textLength })
+        .command(({ tr }) => {
           if (type === 'deletion') {
-            editor.commands.command(({ tr }) => {
-              tr.delete(pos, pos + textLength)
-              return true
-            })
+            tr.delete(pos, pos + textLength)
           } else if (correction) {
-            editor.commands.command(({ tr }) => {
-              tr.replaceWith(pos, pos + textLength, editor.state.schema.text(correction))
-              return true
-            })
+            tr.replaceWith(pos, pos + textLength, editor.state.schema.text(correction))
           }
-        }
-        
-        return
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === ']') {
-            e.preventDefault()
-            e.stopPropagation()
-            editor.state.doc.descendants((node, pos) => {
-              if (pos > editor.state.selection.from && 
-                  node.marks.find(mark => mark.type.name === 'diffHighlight')) {
-                const mark = node.marks.find(m => m.type.name === 'diffHighlight')
-                if (mark.attrs.type === 'deletion') {
-                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize }).deleteSelection().run()
-                } else if (mark.attrs.correction) {
-                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize })
-                    .insertContent(mark.attrs.correction).run()
-                }
-                return false // Stop after handling first mark
-              }
-            })
-            return
-          }
+          return true
+        })
+        .unsetMark('diffHighlight')
+        .run()
     }
+    return
+  }
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedModel]) // Add selectedModel as dependency since handleAnalyze uses it
+  // Alt + Left Arrow to reject next change
+  if (e.altKey && e.key === 'ArrowLeft') {
+    e.preventDefault()
+    console.log('Alt + Left pressed, currentIndex:', currentHighlightIndex)
+    
+    const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
+    console.log('Found highlights:', highlights.length)
+    
+    if (highlights.length > 0) {
+      const element = highlights[0]
+      const type = element.getAttribute('data-diff-type')
+      const pos = editor.view.posAtDOM(element, 0)
+      const textLength = element.textContent.length
+      
+      console.log('Processing highlight for rejection:', { type, pos, textLength })
+      
+      editor.chain()
+        .focus()
+        .setTextSelection({ from: pos, to: pos + textLength })
+        .command(({ tr }) => {
+          // If it's an addition (green), delete it when rejecting
+          if (type === 'addition') {
+            tr.delete(pos, pos + textLength)
+          }
+          return true
+        })
+        .unsetMark('diffHighlight')
+        .run()
+    }
+    return
+  }
+
+  // CMD/CTRL + SHIFT + A to apply all edits
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
+    editor.commands.unsetMark('diffHighlight')
+    
+    for (let i = highlights.length - 1; i >= 0; i--) {
+      const element = highlights[i]
+      const correction = element.getAttribute('data-correction')
+      const type = element.getAttribute('data-diff-type')
+      const pos = editor.view.posAtDOM(element, 0)
+      const textLength = element.textContent.length
+      
+      if (type === 'deletion') {
+        editor.commands.command(({ tr }) => {
+          tr.delete(pos, pos + textLength)
+          return true
+        })
+      } else if (correction) {
+        editor.commands.command(({ tr }) => {
+          tr.replaceWith(pos, pos + textLength, editor.state.schema.text(correction))
+          return true
+        })
+      }
+    }
+    return
+  }
+
+  // Cmd/Ctrl + ] to handle next mark
+  if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+    e.preventDefault()
+    e.stopPropagation()
+    editor.state.doc.descendants((node, pos) => {
+      if (pos > editor.state.selection.from && 
+          node.marks.find(mark => mark.type.name === 'diffHighlight')) {
+        const mark = node.marks.find(m => m.type.name === 'diffHighlight')
+        if (mark.attrs.type === 'deletion') {
+          editor.chain()
+            .setTextSelection({ from: pos, to: pos + node.nodeSize })
+            .deleteSelection()
+            .run()
+        } else if (mark.attrs.correction) {
+          editor.chain()
+            .setTextSelection({ from: pos, to: pos + node.nodeSize })
+            .insertContent(mark.attrs.correction)
+            .run()
+        }
+        return false
+      }
+    })
+    return
+  }
+}
+
+document.addEventListener('keydown', handleKeyDown)
+return () => document.removeEventListener('keydown', handleKeyDown)
+}, [selectedModel, currentHighlightIndex, editor]) // Added dependencies
 
   const handleAnalyze = async () => {
     if (!editor || !selectedModel || isAnalyzing) return
