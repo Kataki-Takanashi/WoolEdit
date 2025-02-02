@@ -183,23 +183,41 @@ const Editor = () => {
         }
         return
       }
+      // CMD/CTRL + SHIFT + A to apply all edits
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
-            e.preventDefault()
-            e.stopPropagation()
-            editor.state.doc.descendants((node, pos) => {
-              if (node.marks.find(mark => mark.type.name === 'diffHighlight')) {
-                const mark = node.marks.find(m => m.type.name === 'diffHighlight')
-                if (mark.attrs.type === 'deletion') {
-                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize }).deleteSelection().run()
-                } else if (mark.attrs.correction) {
-                  editor.chain().setTextSelection({ from: pos, to: pos + node.nodeSize })
-                    .insertContent(mark.attrs.correction).run()
-                }
-              }
+        e.preventDefault()
+        e.stopPropagation()
+        
+        // Get all diff-highlight elements and convert to array
+        const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
+        
+        // First, remove all diff highlights
+        editor.commands.unsetMark('diffHighlight')
+        
+        // Then process each highlight from last to first
+        for (let i = highlights.length - 1; i >= 0; i--) {
+          const element = highlights[i]
+          const correction = element.getAttribute('data-correction')
+          const type = element.getAttribute('data-diff-type')
+          const pos = editor.view.posAtDOM(element, 0)
+          const textLength = element.textContent.length
+          
+          if (type === 'deletion') {
+            editor.commands.command(({ tr }) => {
+              tr.delete(pos, pos + textLength)
+              return true
             })
-            editor.commands.unsetMark('diffHighlight')
-            return
+          } else if (correction) {
+            editor.commands.command(({ tr }) => {
+              tr.replaceWith(pos, pos + textLength, editor.state.schema.text(correction))
+              return true
+            })
           }
+        }
+        
+        return
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key === ']') {
             e.preventDefault()
             e.stopPropagation()
