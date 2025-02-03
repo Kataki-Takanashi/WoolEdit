@@ -157,13 +157,9 @@ const handleKeyDown = (e) => {
   // Alt + Right Arrow to accept next change
   if (e.altKey && e.key === 'ArrowRight') {
     e.preventDefault()
-    console.log('Alt + Right pressed, currentIndex:', currentHighlightIndex)
     
-    // Get fresh list of highlights each time
     const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
-    console.log('Found highlights:', highlights.length)
     
-    // Always process the first highlight since the list changes after each operation
     if (highlights.length > 0) {
       const element = highlights[0]
       const correction = element.getAttribute('data-correction')
@@ -171,9 +167,6 @@ const handleKeyDown = (e) => {
       const pos = editor.view.posAtDOM(element, 0)
       const textLength = element.textContent.length
       
-      console.log('Processing highlight:', { correction, type, pos, textLength })
-      
-      // Create a single transaction for all operations
       editor.chain()
         .focus()
         .setTextSelection({ from: pos, to: pos + textLength })
@@ -194,10 +187,8 @@ const handleKeyDown = (e) => {
   // Alt + Left Arrow to reject next change
   if (e.altKey && e.key === 'ArrowLeft') {
     e.preventDefault()
-    console.log('Alt + Left pressed, currentIndex:', currentHighlightIndex)
     
     const highlights = Array.from(editor.view.dom.querySelectorAll('.diff-highlight'))
-    console.log('Found highlights:', highlights.length)
     
     if (highlights.length > 0) {
       const element = highlights[0]
@@ -205,13 +196,10 @@ const handleKeyDown = (e) => {
       const pos = editor.view.posAtDOM(element, 0)
       const textLength = element.textContent.length
       
-      console.log('Processing highlight for rejection:', { type, pos, textLength })
-      
       editor.chain()
         .focus()
         .setTextSelection({ from: pos, to: pos + textLength })
         .command(({ tr }) => {
-          // If it's an addition (green), delete it when rejecting
           if (type === 'addition') {
             tr.delete(pos, pos + textLength)
           }
