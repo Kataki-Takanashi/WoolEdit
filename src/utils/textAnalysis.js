@@ -73,10 +73,10 @@ export const DiffHighlight = Mark.create({
           const isSingleChar = textContent.replace(/\s+/g, '').length === 1;
           
           const baseStyle = type === 'deletion' 
-            ? 'background-color: rgba(220, 38, 38, 0.08); border-bottom: 2px solid #dc2626;'
+            ? 'background-color: rgba(220, 38, 38, 0.18); border-bottom: 2px solid #dc2626;'
             : type === 'addition'
-            ? 'background-color: rgba(34, 197, 94, 0.08); border-bottom: 2px solid #22c55e;'
-            : 'background-color: rgba(59, 130, 246, 0.08); border-bottom: 2px solid #3b82f6;';
+            ? 'background-color: rgba(34, 197, 94, 0.18); border-bottom: 2px solid #22c55e;'
+            : 'background-color: rgba(59, 130, 246, 0.18); border-bottom: 2px solid #3b82f6;';
           
           const style = isSingleChar 
             ? `${baseStyle} padding: 1px 2px; margin: 0 1px; border-radius: 2px;`
