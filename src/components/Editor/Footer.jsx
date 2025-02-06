@@ -1,8 +1,17 @@
 import Toolbar from './Toolbar'
 import ModelSelector from './ModelSelector'
 
-
-const EditorFooter = ({ editor, selectedModel, models, setSelectedModel, handleAnalyze, isAnalyzing, wordCount }) => {
+const EditorFooter = ({ 
+  editor, 
+  selectedModel, 
+  models, 
+  setSelectedModel, 
+  handleAnalyze, 
+  isAnalyzing, 
+  wordCount,
+  isOllamaConnected,
+  setIsModalOpen 
+}) => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white">
       <div className="max-w-4xl mx-auto px-6 py-2">
@@ -14,10 +23,12 @@ const EditorFooter = ({ editor, selectedModel, models, setSelectedModel, handleA
               selectedModel={selectedModel}
               models={models}
               setSelectedModel={setSelectedModel}
+              isOllamaConnected={isOllamaConnected}
+              setIsModalOpen={setIsModalOpen}
             />
             <button
               onClick={handleAnalyze}
-              disabled={isAnalyzing || !selectedModel}
+              disabled={isAnalyzing || !selectedModel || !isOllamaConnected}
               className="relative inline-flex items-center justify-center gap-2 px-4 py-2 
                 min-w-[150px]
                 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 

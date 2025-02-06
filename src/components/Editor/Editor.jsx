@@ -12,6 +12,7 @@ import { analyzeTextDifferences, DiffHighlight } from '../../utils/textAnalysis'
 import KeyboardShortcuts from './KeyboardShortcuts'
 import Header from './Header'
 import Footer from './Footer'
+import { loadModels } from '../../services/connectionHandler'
 
 const Editor = () => {
   const [title, setTitle] = useState('')
@@ -20,6 +21,7 @@ const Editor = () => {
   const [selectedModel, setSelectedModel] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentHighlightIndex, setCurrentHighlightIndex] = useState(-1)
+  const [isOllamaConnected, setIsOllamaConnected] = useState(false)
   
   const editor = useEditor({
     extensions: [
@@ -142,14 +144,15 @@ const Editor = () => {
   }
 
   useEffect(() => {
-    const loadModels = async () => {
-      const availableModels = await getModels()
+    const initializeConnection = async () => {
+      const { isConnected, models: availableModels } = await loadModels()
+      setIsOllamaConnected(isConnected)
       setModels(availableModels)
-      if (availableModels.length > 0) {
+      if (isConnected && availableModels.length > 0) {
         setSelectedModel(availableModels[0])
       }
     }
-    loadModels()
+    initializeConnection()
   }, [])
 
   return (
@@ -173,6 +176,7 @@ const Editor = () => {
         handleAnalyze={handleAnalyze}
         isAnalyzing={isAnalyzing}
         wordCount={wordCount}
+        isOllamaConnected={isOllamaConnected}
       />
     </div>
   )
