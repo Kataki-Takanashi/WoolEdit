@@ -9,10 +9,12 @@ export const setConnectionConfig = (url, token) => {
 }
 
 const getApiPath = (endpoint) => {
-  // For production (Netlify), use the full URL
-  const path = `${baseUrl}/api/${endpoint}`
-  console.log('Generated API path:', path)
-  return path
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `${baseUrl}/api/api/${endpoint}`
+  }
+  // For local development
+  const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
+  return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
 }
 
 export const getModels = async () => {
