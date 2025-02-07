@@ -4,11 +4,15 @@ let baseUrl = 'http://localhost:11434'
 let apiToken = null
 
 export const setConnectionConfig = (url, token) => {
-  baseUrl = url.trim()
+  baseUrl = url.trim().replace(/\/$/, '')
   apiToken = token.trim()
 }
 
 const getApiPath = (endpoint) => {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `/api/api/${endpoint}`
+  }
+  // For local development
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
   return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
 }
