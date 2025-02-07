@@ -11,7 +11,18 @@ export const setConnectionConfig = (url, token) => {
 const getApiPath = (endpoint) => {
   // Always use the full URL from baseUrl
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-  return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
+  const path = `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
+  
+  console.log('API Path Construction:', {
+    baseUrl,
+    isLocalhost,
+    endpoint,
+    constructedPath: path,
+    windowLocation: typeof window !== 'undefined' ? window.location.href : 'undefined',
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined'
+  })
+  
+  return path
 }
 
 export const getModels = async () => {
