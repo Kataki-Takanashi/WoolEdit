@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { setConnectionConfig } from '../../services/ollamaService'
+import { loadModels } from '../../services/connectionHandler'
 
 const ModelSelector = ({ selectedModel, models, setSelectedModel, isOllamaConnected }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -17,6 +19,49 @@ const ModelSelector = ({ selectedModel, models, setSelectedModel, isOllamaConnec
       setIsModalOpen(true)
     }
   }
+
+  const handleConnect = async () => {
+    if (!url) {
+      alert('Please enter a URL')
+      return
+    }
+  
+    try {
+      // Set the connection configuration
+      setConnectionConfig(url, apiToken)
+  
+      // Test the connection
+      const { isConnected, error } = await loadModels()
+      
+      if (isConnected) {
+        // Store connection details in localStorage
+        localStorage.setItem('ollamaUrl', url)
+        if (apiToken) {
+          localStorage.setItem('ollamaToken', apiToken)
+        }
+        setIsModalOpen(false)
+        window.location.reload()
+      } else {
+        alert(error || 'Failed to connect to Ollama. Please check your URL and token.')
+      }
+    } catch (error) {
+      alert(`Connection error: ${error.message}`)
+    }
+  }
+
+  useEffect(() => {
+    // Load saved connection details on component mount
+    const savedUrl = localStorage.getItem('ollamaUrl')
+    const savedToken = localStorage.getItem('ollamaToken')
+    if (savedUrl) {
+      setUrl(savedUrl)
+      if (savedToken) {
+        setApiToken(savedToken)
+      }
+      // Set the connection config with saved values
+      setConnectionConfig(savedUrl, savedToken || '')
+    }
+  }, [])
 
   return (
     <div className={`relative ${isOllamaConnected ? 'group' : ''}`}>
@@ -75,10 +120,7 @@ const ModelSelector = ({ selectedModel, models, setSelectedModel, isOllamaConnec
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setIsModalOpen(false)
-                    window.location.reload()
-                  }}
+                  onClick={handleConnect}
                   className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >
                   Connect

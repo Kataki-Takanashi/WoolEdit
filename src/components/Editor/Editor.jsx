@@ -20,9 +20,9 @@ const Editor = () => {
   const [models, setModels] = useState([])
   const [selectedModel, setSelectedModel] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [currentHighlightIndex, setCurrentHighlightIndex] = useState(-1)
   const [isOllamaConnected, setIsOllamaConnected] = useState(false)
   
+  // TipTap Config
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -32,13 +32,14 @@ const Editor = () => {
       }),
       Underline,
       Placeholder.configure({
-        placeholder: 'Type or paste (⌘+V) your text here or upload a document.',
+        placeholder: 'Type or paste (⌘+V) your text here or upload a document.', // TODO: add drag and drop to add text
         emptyEditorClass: 'is-editor-empty',
       }),
       CharacterCount,
       Color,
       TextStyle,
       Highlight.configure({ multicolor: true }),
+      // This is the diff highlight extension, it accepts the highlights onclick
       DiffHighlight.configure({
         HTMLAttributes: {
           onclick: (e) => {
@@ -73,10 +74,12 @@ const Editor = () => {
             const pos = view.posAtDOM(target)
             const textLength = target.textContent.trim().length;
             
+            // Makes the 1 char edits easier to see
             if (textLength === 1 && type === 'change') {
               target.classList.add('single-letter-edit');
             }
             
+            // SHIFT + Click to REJECT
             if (event.shiftKey) {
               event.preventDefault()
               if (type === 'addition') {
@@ -117,6 +120,7 @@ const Editor = () => {
         }
       }
     },
+    // This is the word count extension, it updates the word count state (obviously)
     onUpdate: ({ editor }) => {
       const words = editor.storage.characterCount.words()
       setWordCount(words)
