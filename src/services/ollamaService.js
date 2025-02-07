@@ -9,10 +9,7 @@ export const setConnectionConfig = (url, token) => {
 }
 
 const getApiPath = (endpoint) => {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${baseUrl}/api/api/${endpoint}`
-  }
-  // For local development
+  // Always use the full URL from baseUrl
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
   return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
 }
