@@ -4,8 +4,17 @@ let baseUrl = 'http://localhost:11434'
 let apiToken = null
 
 export const setConnectionConfig = (url, token) => {
+  console.log('setConnectionConfig called with:', { 
+    url, 
+    tokenPresent: !!token,
+    currentBaseUrl: baseUrl 
+  })
   baseUrl = url.trim().replace(/\/$/, '')
   apiToken = token.trim()
+  console.log('Config updated:', { 
+    newBaseUrl: baseUrl,
+    tokenSet: !!apiToken 
+  })
 }
 
 const getApiPath = (endpoint) => {
