@@ -9,23 +9,22 @@ export const setConnectionConfig = (url, token) => {
 }
 
 const getApiPath = (endpoint) => {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${baseUrl}/api/${endpoint}`
-  }
-  // For local development
-  const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-  return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
+  // For production (Netlify), use the full URL
+  const path = `${baseUrl}/api/${endpoint}`
+  console.log('Generated API path:', path)
+  return path
 }
 
 export const getModels = async () => {
   try {
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
+    console.log('Connection attempt:', { baseUrl, isLocalhost })
+    
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     }
 
-    // Add ngrok header for non-localhost requests
     if (!isLocalhost) {
       headers['ngrok-skip-browser-warning'] = 'true'
     }
@@ -44,6 +43,9 @@ export const getModels = async () => {
       headers,
       mode: 'cors',
       credentials: 'omit'
+    }).catch(error => {
+      console.error('Fetch error:', error)
+      throw error
     })
     
     // Handle zero status (CORS or network error)
