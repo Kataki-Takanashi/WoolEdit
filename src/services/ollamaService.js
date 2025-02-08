@@ -37,7 +37,7 @@ const getApiPath = (endpoint) => {
 export const getModels = async () => {
   try {
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-    console.log('Connection attempt:', { baseUrl, isLocalhost })
+    console.log('Starting getModels function:', { baseUrl, isLocalhost })
     
     const headers = {
       'Content-Type': 'application/json',
@@ -53,7 +53,10 @@ export const getModels = async () => {
       console.log('Using API token:', apiToken.substring(0, 8) + '...')
     }
 
+    // Force API path construction logging
+    console.log('About to construct API path...')
     const url = getApiPath('tags')
+    
     console.log('Attempting to fetch models from:', url)
     console.log('Request headers:', headers)
 
