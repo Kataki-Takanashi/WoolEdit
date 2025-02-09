@@ -4,46 +4,24 @@ let baseUrl = 'http://localhost:11434'
 let apiToken = null
 
 export const setConnectionConfig = (url, token) => {
-  console.log('setConnectionConfig called with:', { 
-    url, 
-    tokenPresent: !!token,
-    currentBaseUrl: baseUrl 
-  })
-  baseUrl = url.trim().replace(/\/$/, '')
+  baseUrl = url.trim()
   apiToken = token.trim()
-  console.log('Config updated:', { 
-    newBaseUrl: baseUrl,
-    tokenSet: !!apiToken 
-  })
 }
 
 const getApiPath = (endpoint) => {
-  // Always use the full URL from baseUrl
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-  const path = `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
-  
-  console.log('API Path Construction:', {
-    baseUrl,
-    isLocalhost,
-    endpoint,
-    constructedPath: path,
-    windowLocation: typeof window !== 'undefined' ? window.location.href : 'undefined',
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined'
-  })
-  
-  return path
+  return `${baseUrl}${isLocalhost ? '/api/' : '/api/api/'}${endpoint}`
 }
 
 export const getModels = async () => {
   try {
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-    console.log('Starting getModels function:', { baseUrl, isLocalhost })
-    
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     }
 
+    // Add ngrok header for non-localhost requests
     if (!isLocalhost) {
       headers['ngrok-skip-browser-warning'] = 'true'
     }
@@ -53,10 +31,7 @@ export const getModels = async () => {
       console.log('Using API token:', apiToken.substring(0, 8) + '...')
     }
 
-    // Force API path construction logging
-    console.log('About to construct API path...')
     const url = getApiPath('tags')
-    
     console.log('Attempting to fetch models from:', url)
     console.log('Request headers:', headers)
 
@@ -65,9 +40,6 @@ export const getModels = async () => {
       headers,
       mode: 'cors',
       credentials: 'omit'
-    }).catch(error => {
-      console.error('Fetch error:', error)
-      throw error
     })
     
     // Handle zero status (CORS or network error)
