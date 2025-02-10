@@ -32,7 +32,7 @@ const Editor = () => {
       }),
       Underline,
       Placeholder.configure({
-        placeholder: 'Type or paste (⌘+V) your text here or upload a document.', // TODO: add drag and drop to add text
+        placeholder: 'Type or paste (⌘+V) your text here or drag and drop a document.', // TODO: add drag and drop to add text
         emptyEditorClass: 'is-editor-empty',
       }),
       CharacterCount,
