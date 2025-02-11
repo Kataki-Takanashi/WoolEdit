@@ -21,7 +21,6 @@ export const getModels = async () => {
       'Accept': 'application/json',
     }
 
-    // Add ngrok header for non-localhost requests
     if (!isLocalhost) {
       headers['ngrok-skip-browser-warning'] = 'true'
     }
@@ -42,7 +41,6 @@ export const getModels = async () => {
       credentials: 'omit'
     })
     
-    // Handle zero status (CORS or network error)
     if (response.status === 0) {
       throw new Error(`CORS or Network Error - Please ensure:
         1. The server is running and accessible
@@ -50,7 +48,6 @@ export const getModels = async () => {
         3. The URL is correct: ${url}`)
     }
     
-    // Log raw response details
     console.log('Response status:', response.status)
     console.log('Response headers:', Object.fromEntries(response.headers.entries()))
     
@@ -65,7 +62,6 @@ export const getModels = async () => {
 
     const rawText = await response.text()
     
-    // Try to parse the response text
     let data
     try {
       data = JSON.parse(rawText)
@@ -107,10 +103,9 @@ export const analyzeText = async (text, model) => {
     
     const headers = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      'Accept': 'application/json'
     }
 
-    // Add ngrok header for non-localhost requests
     if (!isLocalhost) {
       headers['ngrok-skip-browser-warning'] = 'true'
     }
@@ -131,6 +126,7 @@ export const analyzeText = async (text, model) => {
         stream: false
       }),
     })
+    
     let data = await response.json()
     console.log('Received response:', data)
 
