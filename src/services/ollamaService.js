@@ -93,7 +93,6 @@ export const getModels = async () => {
     }
     console.error('Error fetching models:', errorDetails)
     
-    // Provide more specific error messages
     if (error.message.includes('CORS')) {
       throw new Error(`CORS Error: The server at ${baseUrl} is not allowing requests from this origin.`)
     }
@@ -132,11 +131,20 @@ export const analyzeText = async (text, model) => {
         stream: false
       }),
     })
-    const data = await response.json()
+    let data = await response.json()
     console.log('Received response:', data)
+
+    data.response && (data.response = removeThinkTag(data.response)) // Filtering out the <think></think> tags to support COT models
+
     return data.response || 'No analysis available'
   } catch (error) {
     console.error('Error analyzing text:', error)
     return 'Error analyzing text'
   }
+}
+
+export const removeThinkTag = response => {
+  const hasThinkTag = response.split('</think>').length > 1;
+  if (hasThinkTag) return response.split('</think>').pop().trim()
+  return response
 }
