@@ -6,7 +6,7 @@
 
 ### Run with one command:
 ```bash
-docker run -p 3000:3000 aliabdurraheem/wool-edit:latest
+docker run -p 5173:5173 sheys2003/wool-edit:latest
 ```
 
 Or using docker-compose:

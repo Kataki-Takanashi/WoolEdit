@@ -1,13 +1,36 @@
-import { getModels } from './ollamaService'
+import { getModels, setConnectionConfig } from './ollamaService'
 
 export const checkOllamaConnection = async () => {
   try {
-    const models = await getModels()
-    return {
-      isConnected: Array.isArray(models) && models.length > 0,
-      models: models,
-      error: null
+    // Try local connection first without any saved credentials
+    setConnectionConfig('http://localhost:11434', '')
+    
+    try {
+      const localModels = await getModels()
+      if (Array.isArray(localModels) && localModels.length > 0) {
+        return {
+          isConnected: true,
+          models: localModels,
+          error: null
+        }
+      }
+    } catch (localError) {
+      // If local connection fails, try with saved credentials
+      const savedUrl = localStorage.getItem('ollamaUrl')
+      const savedToken = localStorage.getItem('ollamaToken')
+      
+      if (savedUrl) {
+        setConnectionConfig(savedUrl, savedToken || '')
+        const models = await getModels()
+        return {
+          isConnected: Array.isArray(models) && models.length > 0,
+          models: models,
+          error: null
+        }
+      }
     }
+    
+    throw new Error('Could not establish connection')
   } catch (error) {
     console.error('Connection check failed:', error)
     let errorMessage = 'Connection failed'

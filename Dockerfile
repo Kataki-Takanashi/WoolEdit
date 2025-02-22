@@ -8,8 +8,10 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+EXPOSE 5173
 
-EXPOSE 3000
+ENV HOST=0.0.0.0
+ENV PORT=5173
+ENV VITE_OLLAMA_URL=http://localhost:11434
 
-CMD ["npm", "start"]
+CMD ["npm", "start", "--", "--host", "0.0.0.0"]

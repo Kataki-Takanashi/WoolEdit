@@ -6,6 +6,48 @@ const ModelSelector = ({ selectedModel, models, setSelectedModel, isOllamaConnec
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [url, setUrl] = useState('')
   const [apiToken, setApiToken] = useState('')
+  const [retryCount, setRetryCount] = useState(0)
+  const maxRetries = 5
+  const retryDelay = 2000
+
+  const handleConnect = async () => {
+    const connectionUrl = url.trim() || 'http://localhost:11434'
+    
+    const attemptConnection = async () => {
+      try {
+        setConnectionConfig(connectionUrl, apiToken)
+        const { isConnected, error } = await loadModels()
+        
+        if (isConnected) {
+          localStorage.setItem('ollamaUrl', connectionUrl)
+          if (apiToken) {
+            localStorage.setItem('ollamaToken', apiToken)
+          }
+          setIsModalOpen(false)
+          window.location.reload()
+          return true
+        }
+        return false
+      } catch (error) {
+        return false
+      }
+    }
+
+    const retryConnection = async () => {
+      if (await attemptConnection()) return
+
+      if (retryCount < maxRetries) {
+        setRetryCount(prev => prev + 1)
+        setTimeout(retryConnection, retryDelay)
+      } else {
+        alert('Failed to connect to Ollama after multiple attempts. Please check if Ollama is running.')
+        setRetryCount(0)
+      }
+    }
+
+    retryConnection()
+  }
+
   const urlInputRef = useRef(null)
 
   useEffect(() => {
@@ -17,35 +59,6 @@ const ModelSelector = ({ selectedModel, models, setSelectedModel, isOllamaConnec
   const handleConnectionClick = () => {
     if (!isOllamaConnected) {
       setIsModalOpen(true)
-    }
-  }
-
-  const handleConnect = async () => {
-    if (!url) {
-      alert('Please enter a URL')
-      return
-    }
-  
-    try {
-      // Set the connection configuration
-      setConnectionConfig(url, apiToken)
-  
-      // Test the connection
-      const { isConnected, error } = await loadModels()
-      
-      if (isConnected) {
-        // Store connection details in localStorage
-        localStorage.setItem('ollamaUrl', url)
-        if (apiToken) {
-          localStorage.setItem('ollamaToken', apiToken)
-        }
-        setIsModalOpen(false)
-        window.location.reload()
-      } else {
-        alert(error || 'Failed to connect to Ollama. Please check your URL and token.')
-      }
-    } catch (error) {
-      alert(`Connection error: ${error.message}`)
     }
   }
 
