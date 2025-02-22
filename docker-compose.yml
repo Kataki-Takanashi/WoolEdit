@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  frontend:
+    image: aliabdurraheem/wool-edit:latest
+    ports:
+      - "3000-3010:3000"
+    environment:
+      - REACT_APP_OLLAMA_URL=http://host.docker.internal:11434
+    labels:
+      - "com.wool-edit.description=Wool Edit Web UI"
+      - "com.wool-edit.port=3000"
