@@ -107,7 +107,7 @@ export const analyzeText = async (text, model) => {
     }
 
     if (!isLocalhost) {
-      headers['ngrok-skip-browser-warning'] = 'true'
+      headers['bypass-tunnel-reminder'] = 'true'
     }
 
     if (apiToken) {
