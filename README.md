@@ -4,6 +4,9 @@ WoolEdit is an AI-powered document editor that provides real-time grammar and sp
 
 🌐 **Try it out: [wooledit.abdurraheem.com](https://wooledit.abdurraheem.com)**
 
+![wool-edit-demo-no-static_background](https://github.com/user-attachments/assets/f67465f3-e3e0-4261-872a-3ae219e12eda)
+
+
 ## Table of Contents
 - [Features](#features)
 - [Live Demo](#live-demo)
